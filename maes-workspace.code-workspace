@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"algorithm": "cpp",
+			"atomic": "cpp",
+			"cmath": "cpp",
+			"iterator": "cpp",
+			"memory": "cpp",
+			"ostream": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"xlocale": "cpp",
+			"xlocnum": "cpp",
+			"xmemory": "cpp",
+			"xstring": "cpp",
+			"xutility": "cpp",
+			"*.rh": "cpp"
+		}
+	}
+}
