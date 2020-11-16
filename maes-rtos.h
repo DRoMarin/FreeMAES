@@ -56,7 +56,7 @@ namespace MAES
     {
         NO_ERRORS,
         FOUND,
-        HANDLE_FULL,
+        HANDLE_NULL,
         LIST_FULL,
         DUPLICATED,
         NOT_FOUND,
@@ -177,13 +177,12 @@ namespace MAES
     public:
         friend class Agent_Platform;
         friend class Agent_Organization;
-        friend class Agent_Message;
+        friend class Agent_Msg;
         Agent(char *name, UBaseType_t pri, uint16_t sizeStack);
         Agent_AID AID();
     };
 
     //AMS_task namespace
-
     namespace
     {
         typedef struct
@@ -202,7 +201,7 @@ namespace MAES
     private:
         Agent agentAMS;
         Agent_AID Agent_Handle[AGENT_LIST_SIZE];
-        UBaseType_t subbscribers;
+        UBaseType_t subscribers;
         AP_Description description;
         USER_DEF_COND cond;
         USER_DEF_COND *ptr_cond;
@@ -210,24 +209,25 @@ namespace MAES
     public:
         Agent_Platform(char *name);
         Agent_Platform(char *name, USER_DEF_COND *user_cond);
+
         bool boot();
         void agent_init(Agent agent, void behaviour(void *pvParameters));
-
+        void agent_init(Agent agent, void behaviour(void *pvParameters), void *pvParameters);
         bool agent_search(Agent_AID aid);
         void agent_wait(TickType_t ticks);
         void agent_yield();
         Agent_AID get_running_agent();
-        BaseType_t get_state(Agent_AID aid);
+        AGENT_MODE get_state(Agent_AID aid);
         Agent_info get_Agent_description(Agent_AID aid);
-
-        //AP_Description get_AP_description();
+        AP_Description get_AP_description();
 
         ERROR_CODE register_agent(Agent_AID aid);
         ERROR_CODE deregister_agent(Agent_AID aid);
         ERROR_CODE kill_agent(Agent_AID aid);
         ERROR_CODE suspend_agent(Agent_AID aid);
         ERROR_CODE resume_agent(Agent_AID aid);
-        void restart(Agent_AID aid);
+        void restart(Agent_AID aid, void behaviour(void *pvParameters));
+        void restart(Agent_AID aid, void behaviour(void *pvParameters), void *pvParameters);
     };
 
     // Agent Organization Class
