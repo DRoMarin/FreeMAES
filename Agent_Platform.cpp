@@ -47,16 +47,9 @@ namespace MAES
             Agent_AID temp;
             AMSparameter parameters;
 
-            QueueHandle_t msgQueue;
-            SemaphoreHandle_t msgSemaphore;
-
             // Mailbox = Queue + Semaphore
 
-            msgQueue = xQueueCreate(1, sizeof(MSG_TYPE));
-            msgSemaphore = xSemaphoreCreateBinary();
-            agentAMS.agent.mailbox_handle = xQueueCreateSet(2);
-            xQueueAddToSet(msgQueue, agentAMS.agent.mailbox_handle);
-            xQueueAddToSet(msgSemaphore, agentAMS.agent.mailbox_handle);
+            agentAMS.agent.mailbox_handle = xQueueCreate(1,sizeof(MSG_TYPE));
 
             // Task
             parameters.services = this;
@@ -445,6 +438,8 @@ namespace MAES
         }
     }
 
+
+    // AMS task overload
         namespace
     {
 

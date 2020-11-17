@@ -20,9 +20,9 @@ namespace MAES
 
 
 #define Agent_AID TaskHandle_t          //
-#define Mailbox_Handle QueueSetHandle_t //
+#define Mailbox_Handle QueueHandle_t //
 #define AGENT_LIST_SIZE 64
-#define MAX_RECIEVERS AGENT_LIST_SIZE - 1
+#define MAX_RECEIVERS AGENT_LIST_SIZE - 1
 #define BEHAVIOUR_LIST_SIZE 8
 #define ORGANIZATIONS_SIZE 16
 
@@ -265,10 +265,11 @@ namespace MAES
     {
     private:
         MsgObj msg;
-        Agent_AID receivers[MAX_RECIEVERS];
+        Agent_AID receivers[MAX_RECEIVERS];
         UBaseType_t subscribers;
         Agent_AID caller;
         bool isRegistered(Agent_AID aid);
+        Mailbox_Handle get_mailbox(Agent_AID aid);
         // MAILBOX
     public:
         Agent_Msg();
@@ -276,8 +277,8 @@ namespace MAES
         ERROR_CODE remove_receiver(Agent_AID aid_receiver);
         void clear_all_receiver();
         void refresh_list();
-        MSG_TYPE receive(UBaseType_t timeout);
-        ERROR_CODE send(Agent_AID aid_receiver, UBaseType_t timeout);
+        MSG_TYPE receive(TickType_t timeout);
+        ERROR_CODE send(Agent_AID aid_receiver, TickType_t timeout);
         ERROR_CODE send();
         void set_msg_type(MSG_TYPE type);
         void set_msg_content(char *body);
