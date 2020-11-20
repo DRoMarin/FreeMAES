@@ -13,7 +13,7 @@ namespace MAES
         agentAMS.agent.agent_name = name;
         ptr_cond = &cond;
         subscribers = 0;
-        for (int i = 0; i < AGENT_LIST_SIZE; i++)
+        for (UBaseType_t i = 0; i < AGENT_LIST_SIZE; i++)
         {
             Agent_Handle[i] = (Agent_AID)NULL;
             tasksEnv[Agent_Handle[i]] = NULL;
@@ -29,7 +29,7 @@ namespace MAES
         agentAMS.agent.agent_name = name;
         ptr_cond = user_cond;
         subscribers = 0;
-        for (int i = 0; i < AGENT_LIST_SIZE; i++)
+        for (UBaseType_t i = 0; i < AGENT_LIST_SIZE; i++)
         {
             Agent_Handle[i] = (Agent_AID)NULL;
             tasksEnv[Agent_Handle[i]] = NULL;
@@ -44,19 +44,30 @@ namespace MAES
     {
         if (xTaskGetCurrentTaskHandle() == NULL)
         {
-            Agent_AID temp;
             AMSparameter parameters;
 
-            // Mailbox = Queue + Semaphore
+            // Mailbox = Queue
 
-            agentAMS.agent.mailbox_handle = xQueueCreate(1,sizeof(MSG_TYPE));
+            agentAMS.agent.mailbox_handle = xQueueCreate(1, sizeof(MSG_TYPE));
 
             // Task
             parameters.services = this;
             parameters.cond = ptr_cond;
-            xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, &agentAMS.agent.aid);
-            tasksEnv.insert(pair<TaskHandle_t, Agent *>(agentAMS.agent.aid, &agentAMS));
+            //creador(a,b)
+            #if configENABLE_MPU == 1
+            {
+                StaticTask_t xTaskBuffer;
+                StackType_t xStack[agentAMS.resources.stackSize];
+                agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, xStack,&xTaskBuffer);
+            }
+            #else
+            {
+                xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, &agentAMS.agent.aid);
+            }
+            #endif
 
+            tasksEnv.insert(pair<TaskHandle_t, Agent *>(agentAMS.agent.aid, &agentAMS));
+            
             if (agentAMS.agent.aid != NULL)
             {
                 for (auto const &[handle, agentPtr] : tasksEnv)
@@ -67,6 +78,7 @@ namespace MAES
                     }
                     register_agent(handle);
                 }
+                xTaskResumeAll();
                 return NO_ERRORS;
             }
             else
@@ -89,20 +101,25 @@ namespace MAES
     {
         if (xTaskGetCurrentTaskHandle() == NULL)
         {
-            QueueHandle_t msgQueue;
-            SemaphoreHandle_t msgSemaphore;
+            // Mailbox
 
-            // Mailbox = Queue + Semaphore
-
-            msgQueue = xQueueCreate(1, sizeof(MSG_TYPE));
-            msgSemaphore = xSemaphoreCreateBinary();
-            a.agent.mailbox_handle = xQueueCreateSet(2);
-            xQueueAddToSet(msgQueue, a.agent.mailbox_handle);
-            xQueueAddToSet(msgSemaphore, a.agent.mailbox_handle);
+            a.agent.mailbox_handle = xQueueCreate(1, sizeof(MSG_TYPE));
 
             // Task
-
-            xTaskCreate(behaviour, a.agent.agent_name, a.resources.stackSize, NULL, -1, &a.agent.aid);
+            a.resources.function = behaviour;
+            a.resources.taskParameters = NULL;
+            #if configENABLE_MPU == 1
+            {
+                StaticTask_t xTaskBuffer;
+                StackType_t xStack[agentAMS.resources.stackSize];
+                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack,&xTaskBuffer);
+            }
+            #else
+            {
+                xTaskCreate(behaviour, a.agent.agent_name, a.resources.stackSize, a.resources.taskParameters, 0, &a.agent.aid);
+            }
+            #endif
+            vTaskSuspend(a.agent.aid);
             tasksEnv.insert(pair<TaskHandle_t, Agent *>(a.agent.aid, &a));
         }
     }
@@ -117,21 +134,27 @@ namespace MAES
         if (xTaskGetCurrentTaskHandle() == NULL)
         {
             Agent_AID temp;
-            QueueHandle_t msgQueue;
-            SemaphoreHandle_t msgSemaphore;
 
-            // Mailbox = Queue + Semaphore
+            // Mailbox = Queue
 
-            msgQueue = xQueueCreate(1, sizeof(MSG_TYPE));
-            msgSemaphore = xSemaphoreCreateBinary();
-            a.agent.mailbox_handle = xQueueCreateSet(2);
-            xQueueAddToSet(msgQueue, a.agent.mailbox_handle);
-            xQueueAddToSet(msgSemaphore, a.agent.mailbox_handle);
+            a.agent.mailbox_handle = xQueueCreate(1, sizeof(MSG_TYPE));
 
             // Task
-
-            xTaskCreate(behaviour, a.agent.agent_name, a.resources.stackSize, pvParameters, -1, &a.agent.aid);
+            a.resources.function = behaviour;
+            a.resources.taskParameters = pvParameters;
+            #if configENABLE_MPU == 1
+            {
+                StaticTask_t xTaskBuffer;
+                StackType_t xStack[agentAMS.resources.stackSize];
+                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack,&xTaskBuffer);
+            }
+            #else
+            {
+                xTaskCreate(behaviour, a.agent.agent_name, a.resources.stackSize, a.resources.taskParameters, 0, &a.agent.aid);
+            }
+            #endif
             tasksEnv.insert(pair<TaskHandle_t, Agent *>(a.agent.aid, &a));
+            vTaskSuspend(a.agent.aid);
         }
     }
 
@@ -342,6 +365,7 @@ namespace MAES
                 m = description->agent.mailbox_handle;
                 vQueueDelete(m);
                 vTaskDelete(aid);
+                tasksEnv.erase(aid);
             }
             return error;
         }
@@ -406,7 +430,7 @@ namespace MAES
     * Class: Agent Platform                                                     *
     * Function: resume_agent                                                    *
     ****************************************************************************/
-    void Agent_Platform::restart(Agent_AID aid, void behaviour(void *pvParameters))
+    void Agent_Platform::restart(Agent_AID aid)
     {
         if (uxTaskPriorityGet(xTaskGetCurrentTaskHandle()) == configMAX_PRIORITIES - 1)
         {
@@ -419,43 +443,177 @@ namespace MAES
             m = a->agent.mailbox_handle;
             vTaskDelete(aid);
             vQueueDelete(m);
+            tasksEnv.erase(aid);
 
-            QueueHandle_t msgQueue;
-            SemaphoreHandle_t msgSemaphore;
+            // Mailbox = Queue
 
-            // Mailbox = Queue + Semaphore
-
-            msgQueue = xQueueCreate(1, sizeof(MSG_TYPE));
-            msgSemaphore = xSemaphoreCreateBinary();
-            a->agent.mailbox_handle = xQueueCreateSet(2);
-            xQueueAddToSet(msgQueue, a->agent.mailbox_handle);
-            xQueueAddToSet(msgSemaphore, a->agent.mailbox_handle);
+            a->agent.mailbox_handle = xQueueCreate(1, sizeof(MSG_TYPE));
 
             // Task
 
-            xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, NULL, -1, &a->agent.aid);
+            #if configENABLE_MPU == 1
+            {
+                StaticTask_t xTaskBuffer;
+                StackType_t xStack[agentAMS.resources.stackSize];
+                a.agent.aid = xTaskCreateStatic(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, xStack,&xTaskBuffer);
+            }
+            #else
+            {
+                xTaskCreate(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
+            }
+            #endif
+
+            xTaskCreate(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
             tasksEnv.insert(pair<TaskHandle_t, Agent *>(a->agent.aid, a));
         }
     }
 
-
-    // AMS task overload
-        namespace
+    /***********************      AMS task overload      ***********************/
+    namespace
     {
-
-        void AMS_task(void *parameters){
-            AMSparameter *amsParameters = (AMSparameter*) parameters;
-            Agent_Platform service = amsParameters->services;
-            USER_DEF_COND * cond = amsParameters->cond;
+        void AMS_task(void *parameters)
+        {
+            AMSparameter *amsParameters = (AMSparameter *)parameters;
+            Agent_Platform *services = amsParameters->services;
+            USER_DEF_COND *cond = amsParameters->cond;
             Agent_Msg msg;
-            
+
             UBaseType_t error_msg = 0;
             while (1)
             {
-                //msg.receive();
-            }
-            
-        }
+                msg.receive(portMAX_DELAY);
+                if (msg.get_msg_type() == REQUEST)
+                {
+                    if (strcmp(msg.get_msg_content(), "KILL") == 0)
+                    {
+                        if (cond->kill_cond())
+                        {
+                            error_msg = services->kill_agent(msg.get_target_agent());
+                            if (error_msg == NO_ERRORS)
+                            {
+                                msg.set_msg_type(CONFIRM);
+                            }
+                            else
+                            {
+                                msg.set_msg_type(REFUSE);
+                            }
+                        }
+                        else
+                        {
+                            msg.set_msg_type(REFUSE);
+                        }
+                        msg.send(msg.get_sender(), 0);
+                    } //KILL Case
 
-    }
+                    else if (strcmp(msg.get_msg_content(), "REGISTER") == 0)
+                    {
+                        if (cond->register_cond())
+                        {
+                            error_msg = services->register_agent(msg.get_target_agent());
+                            if (error_msg == NO_ERRORS)
+                            {
+                                msg.set_msg_type(CONFIRM);
+                            }
+                            else
+                            {
+                                msg.set_msg_type(REFUSE);
+                            }
+                        }
+                        else
+                        {
+                            msg.set_msg_type(REFUSE);
+                        }
+                        msg.send(msg.get_sender(), 0);
+                    } //REGISTER Case
+
+                    else if (strcmp(msg.get_msg_content(), "DEREGISTER") == 0)
+                    {
+                        if (cond->deregister_cond())
+                        {
+                            error_msg = services->deregister_agent(msg.get_target_agent());
+                            if (error_msg == NO_ERRORS)
+                            {
+                                msg.set_msg_type(CONFIRM);
+                            }
+                            else
+                            {
+                                msg.set_msg_type(REFUSE);
+                            }
+                        }
+                        else
+                        {
+                            msg.set_msg_type(REFUSE);
+                        }
+                        msg.send(msg.get_sender(), 0);
+                    } //DEREGISTER Case
+
+                    else if (strcmp(msg.get_msg_content(), "SUSPEND") == 0)
+                    {
+                        if (cond->suspend_cond())
+                        {
+                            error_msg = services->suspend_agent(msg.get_target_agent());
+                            if (error_msg == NO_ERRORS)
+                            {
+                                msg.set_msg_type(CONFIRM);
+                            }
+                            else
+                            {
+                                msg.set_msg_type(REFUSE);
+                            }
+                        }
+                        else
+                        {
+                            msg.set_msg_type(REFUSE);
+                        }
+                        msg.send(msg.get_sender(), 0);
+                    } //SUSPEND Case
+
+                    else if (strcmp(msg.get_msg_content(), "RESUME") == 0)
+                    {
+                        if (cond->resume_cond())
+                        {
+                            error_msg = services->resume_agent(msg.get_target_agent());
+                            if (error_msg == NO_ERRORS)
+                            {
+                                msg.set_msg_type(CONFIRM);
+                            }
+                            else
+                            {
+                                msg.set_msg_type(REFUSE);
+                            }
+                        }
+                        else
+                        {
+                            msg.set_msg_type(REFUSE);
+                        }
+                        msg.send(msg.get_sender(), 0);
+                    } //RESUME Case
+
+                    else if (strcmp(msg.get_msg_content(), "RESTART") == 0)
+                    {
+                        if (cond->restart_cond())
+                        {
+                            services->restart(msg.get_target_agent());
+                        }
+                        else
+                        {
+                            msg.set_msg_type(REFUSE);
+                        }
+                        msg.send(msg.get_sender(), 0);
+                    } //RESTART Case
+
+                    else
+                    {
+                        msg.set_msg_type(NOT_UNDERSTOOD);
+                        msg.send(msg.get_sender(), 0);
+                    }
+                } //end if
+                else
+                {
+                    msg.set_msg_type(NOT_UNDERSTOOD);
+                    msg.send(msg.get_sender(), 0);
+                }
+            } // end while
+        }
+    } // namespace
 } // namespace MAES

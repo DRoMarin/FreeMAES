@@ -481,7 +481,7 @@ namespace MAES
         }
     }
 
-    ERROR_CODE Agent_Msg::kill(Agent_AID &target_agent)
+    ERROR_CODE Agent_Msg::kill(Agent_AID target_agent)
     {
         Agent_AID AMS;
         Agent *agent_caller;
@@ -549,4 +549,4 @@ namespace MAES
         }
     }
 
-}; // namespace MAES
+} // namespace MAES

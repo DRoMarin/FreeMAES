@@ -8,18 +8,15 @@
 
 #include <iostream>
 #include <map>
-#include <tuple>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
-#include "semphr.h"
 
 namespace MAES
 {
     using namespace std;
 
-
-#define Agent_AID TaskHandle_t          //
+#define Agent_AID TaskHandle_t       //
 #define Mailbox_Handle QueueHandle_t //
 #define AGENT_LIST_SIZE 64
 #define MAX_RECEIVERS AGENT_LIST_SIZE - 1
@@ -117,13 +114,15 @@ namespace MAES
     typedef struct
     {
         uint16_t stackSize;
+        TaskFunction_t function;
+        void * taskParameters;
     } Agent_resources;
 
     // Organization Information
     typedef struct
     {
         ORG_TYPE org_type;
-        UBaseType_t member_num;
+        UBaseType_t members_num;
         UBaseType_t banned_num;
         Agent_AID members[AGENT_LIST_SIZE];
         Agent_AID banned[AGENT_LIST_SIZE];
@@ -187,7 +186,7 @@ namespace MAES
     {
         typedef struct
         {
-            Agent_Platform services;
+            Agent_Platform *services;
             USER_DEF_COND *cond;
         } AMSparameter;
 
@@ -226,8 +225,7 @@ namespace MAES
         ERROR_CODE kill_agent(Agent_AID aid);
         ERROR_CODE suspend_agent(Agent_AID aid);
         ERROR_CODE resume_agent(Agent_AID aid);
-        void restart(Agent_AID aid, void behaviour(void *pvParameters));
-        void restart(Agent_AID aid, void behaviour(void *pvParameters), void *pvParameters);
+        void restart(Agent_AID aid);
     };
 
     // Agent Organization Class
@@ -293,7 +291,7 @@ namespace MAES
         ERROR_CODE deregistration(Agent_AID target_agent);
         ERROR_CODE suspend(Agent_AID target_agent);
         ERROR_CODE resume(Agent_AID target_agent);
-        ERROR_CODE kill(Agent_AID &target_agent);
+        ERROR_CODE kill(Agent_AID target_agent);
         ERROR_CODE restart();
     };
 
@@ -305,7 +303,7 @@ namespace MAES
         virtual void action() = 0;
         virtual void setup();
         virtual bool done();
-        virtual bool failure_detected();
+        virtual bool failure_detection();
         virtual void failure_identification();
         virtual void failure_recovery();
         void execute();
@@ -326,6 +324,10 @@ namespace MAES
         virtual void action() = 0;
         virtual bool done();
     };
-    
-    map<TaskHandle_t, Agent*> tasksEnv;
+
+    map<TaskHandle_t, Agent *> tasksEnv;
 } // namespace MAES
+
+
+
+
