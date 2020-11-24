@@ -53,21 +53,21 @@ namespace MAES
             // Task
             parameters.services = this;
             parameters.cond = ptr_cond;
-            //creador(a,b)
-            #if configENABLE_MPU == 1
-            {
-                StaticTask_t xTaskBuffer;
-                StackType_t xStack[agentAMS.resources.stackSize];
-                agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, xStack,&xTaskBuffer);
-            }
-            #else
-            {
-                xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, &agentAMS.agent.aid);
-            }
-            #endif
+
+#if configENABLE_MPU == 1
+            
+            StaticTask_t xTaskBuffer;
+            StackType_t xStack[agentAMS.resources.stackSize];
+            agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, xStack, &xTaskBuffer);
+            
+#else
+            
+            xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, &agentAMS.agent.aid);
+            
+#endif
 
             tasksEnv.insert(pair<TaskHandle_t, Agent *>(agentAMS.agent.aid, &agentAMS));
-            
+
             if (agentAMS.agent.aid != NULL)
             {
                 for (auto const &[handle, agentPtr] : tasksEnv)
@@ -108,16 +108,13 @@ namespace MAES
             // Task
             a.resources.function = behaviour;
             a.resources.taskParameters = NULL;
+            
             #if configENABLE_MPU == 1
-            {
                 StaticTask_t xTaskBuffer;
                 StackType_t xStack[agentAMS.resources.stackSize];
-                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack,&xTaskBuffer);
-            }
+                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
             #else
-            {
                 xTaskCreate(behaviour, a.agent.agent_name, a.resources.stackSize, a.resources.taskParameters, 0, &a.agent.aid);
-            }
             #endif
             vTaskSuspend(a.agent.aid);
             tasksEnv.insert(pair<TaskHandle_t, Agent *>(a.agent.aid, &a));
@@ -142,17 +139,15 @@ namespace MAES
             // Task
             a.resources.function = behaviour;
             a.resources.taskParameters = pvParameters;
+
             #if configENABLE_MPU == 1
-            {
                 StaticTask_t xTaskBuffer;
                 StackType_t xStack[agentAMS.resources.stackSize];
-                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack,&xTaskBuffer);
-            }
+                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
             #else
-            {
                 xTaskCreate(behaviour, a.agent.agent_name, a.resources.stackSize, a.resources.taskParameters, 0, &a.agent.aid);
-            }
             #endif
+
             tasksEnv.insert(pair<TaskHandle_t, Agent *>(a.agent.aid, &a));
             vTaskSuspend(a.agent.aid);
         }
@@ -451,17 +446,17 @@ namespace MAES
 
             // Task
 
-            #if configENABLE_MPU == 1
+#if configENABLE_MPU == 1
             {
                 StaticTask_t xTaskBuffer;
                 StackType_t xStack[agentAMS.resources.stackSize];
-                a.agent.aid = xTaskCreateStatic(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, xStack,&xTaskBuffer);
+                a.agent.aid = xTaskCreateStatic(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, xStack, &xTaskBuffer);
             }
-            #else
+#else
             {
                 xTaskCreate(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
             }
-            #endif
+#endif
 
             xTaskCreate(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
             tasksEnv.insert(pair<TaskHandle_t, Agent *>(a->agent.aid, a));

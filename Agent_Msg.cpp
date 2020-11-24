@@ -304,7 +304,6 @@ namespace MAES
     * Class: Agent Message                                                      *
     * Functions: agent states messages                                          *
     ****************************************************************************/
-
     ERROR_CODE Agent_Msg::registration(Agent_AID target_agent)
     {
         Agent_AID AMS;
@@ -548,5 +547,4 @@ namespace MAES
             return NO_ERRORS;
         }
     }
-
 } // namespace MAES

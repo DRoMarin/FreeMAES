@@ -9,7 +9,6 @@ namespace MAES
     * Class: Agent                                                              *
     * Function: Agent constructor                                               *
     ****************************************************************************/
-
     Agent::Agent(char *name, UBaseType_t pri, uint16_t sizeStack)
     {
         if (agent.priority >= (UBaseType_t)(configMAX_PRIORITIES - 1))
@@ -29,7 +28,6 @@ namespace MAES
     * Class: Agent                                                              *
     * Function: Default Agent constructor                                       *
     ****************************************************************************/
-
     Agent::Agent()
     {
     }
@@ -38,7 +36,6 @@ namespace MAES
     * Class: Agent                                                              *
     * Function: get Agent's aid                                                 *
     ****************************************************************************/
-
     Agent_AID Agent::AID()
     {
         return agent.aid;
