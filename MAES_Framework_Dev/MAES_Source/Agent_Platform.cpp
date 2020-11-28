@@ -11,8 +11,10 @@ namespace MAES
 	Agent_Platform::Agent_Platform(char* name)
 	{
 		agentAMS.agent.agent_name = name;
+		description.AP_name = name;
+		description.subscribers;
 		ptr_cond = &cond;
-		subscribers = 0;
+
 		agentAMS.agent.priority = configMAX_PRIORITIES - 1;
 		for (UBaseType_t i = 0; i < AGENT_LIST_SIZE; i++)
 		{
@@ -28,7 +30,7 @@ namespace MAES
 	{
 		agentAMS.agent.agent_name = name;
 		ptr_cond = user_cond;
-		subscribers = 0;
+		description.subscribers = 0;
 		for (UBaseType_t i = 0; i < AGENT_LIST_SIZE; i++)
 		{
 			Agent_Handle[i] = (Agent_AID)NULL;
@@ -53,27 +55,25 @@ namespace MAES
 			parametersForTask->services = this;
 			parametersForTask->cond = ptr_cond;
 			agentAMS.resources.stackSize = 1024;
-			//#if configENABLE_MPU == 1
+#if configENABLE_MPU == 1 /*************************************************************/
 
-			//           StaticTask_t xTaskBuffer;
-			//           StackType_t xStack[agentAMS.resources.stackSize];
-			//           agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, configMAX_PRIORITIES - 1, xStack, &xTaskBuffer);
+			StaticTask_t xTaskBuffer;
+			StackType_t xStack[agentAMS.resources.stackSize];
+			agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void*)&parameters, configMAX_PRIORITIES - 1, xStack, &xTaskBuffer);
 
-			//#else
+#else
 
 			xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void*)&parametersForTask, (configMAX_PRIORITIES - 1), &agentAMS.agent.aid);
 
-			//#endif
+#endif
 			systemVars* ptr_env = &env;
+			description.AMS_AID = agentAMS.agent.aid;
 			ptr_env->set_TaskEnv(agentAMS.agent.aid, &agentAMS);
 
 			if (agentAMS.agent.aid != NULL)
-			{ //for (UBaseType_t i = 0; i < sizeof(tasksEnv); i++)
+			{
 				for (auto const& [handle, agentPtr] : ptr_env->getEnv())
 				{
-					//auto handle = tasksEnv[i].first;
-					//auto agentPtr = tasksEnv[i].first;
-
 					if (handle == NULL || agentAMS.agent.aid == NULL)
 					{
 						break;
@@ -100,7 +100,6 @@ namespace MAES
 	****************************************************************************/
 	void Agent_Platform::agent_init(Agent* a, void behaviour(void* pvParameters))
 	{
-		auto obs = xTaskGetCurrentTaskHandle();
 		if (xTaskGetCurrentTaskHandle() == 0)
 		{
 			// Mailbox
@@ -111,13 +110,13 @@ namespace MAES
 			a->resources.function = behaviour;
 			a->resources.taskParameters = NULL;
 
-			//            #if configENABLE_MPU == 1
-			//                StaticTask_t xTaskBuffer;
-			//                StackType_t xStack[agentAMS.resources.stackSize];
-			//                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
-			//            #else
+#if configENABLE_MPU == 1 /****************************************************************************************************************/
+			StaticTask_t xTaskBuffer;
+			StackType_t xStack[agentAMS.resources.stackSize];
+			a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void*)&parameters, 0, xStack, &xTaskBuffer);
+#else
 			xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
-			//            #endif
+#endif
 			systemVars* ptr_env = &env;
 			ptr_env->set_TaskEnv(a->agent.aid, a);
 			vTaskSuspend(a->agent.aid);
@@ -141,13 +140,13 @@ namespace MAES
 			a->resources.function = behaviour;
 			a->resources.taskParameters = pvParameters;
 
-			//            #if configENABLE_MPU == 1
-			//                StaticTask_t xTaskBuffer;
-			//                StackType_t xStack[agentAMS.resources.stackSize];
-			//                a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
-			//            #else
+#if configENABLE_MPU == 1
+			StaticTask_t xTaskBuffer;
+			StackType_t xStack[agentAMS.resources.stackSize];
+			a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void*)&parameters, 0, xStack, &xTaskBuffer);
+#else
 			xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 1, &a->agent.aid);
-			//            #endif
+#endif
 			systemVars* ptr_env = &env;
 			ptr_env->set_TaskEnv(a->agent.aid, a);
 			vTaskSuspend(a->agent.aid);
@@ -160,7 +159,7 @@ namespace MAES
 	****************************************************************************/
 	bool Agent_Platform::agent_search(Agent_AID aid)
 	{
-		for (UBaseType_t i = 0; i < subscribers; i++)
+		for (UBaseType_t i = 0; i < description.subscribers; i++)
 		{
 			if (Agent_Handle[i] == aid)
 			{
@@ -241,10 +240,10 @@ namespace MAES
 	****************************************************************************/
 	Agent_info Agent_Platform::get_Agent_description(Agent_AID aid)
 	{
-		Agent* description;
-		description = env.get_TaskEnv(aid);
+		Agent*a;
+		a = env.get_TaskEnv(aid);
 
-		return description->agent;
+		return a->agent;
 	}
 
 	/****************************************************************************
@@ -253,10 +252,6 @@ namespace MAES
 	****************************************************************************/
 	AP_Description Agent_Platform::get_AP_description()
 	{
-		AP_Description description;
-		description.AMS_AID = agentAMS.agent.aid;
-		description.AP_name = agentAMS.agent.agent_name;
-		description.subscribers = subscribers;
 		return description;
 	}
 
@@ -274,16 +269,15 @@ namespace MAES
 		{
 			if (!agent_search(aid))
 			{
-				if (subscribers < AGENT_LIST_SIZE)
+				if (description.subscribers < AGENT_LIST_SIZE)
 				{
-					Agent* description;
-					description = env.get_TaskEnv(aid);
-					description->agent.AP = agentAMS.agent.aid;
-					Agent_Handle[subscribers] = aid;
-					subscribers++;
-					vTaskPrioritySet(aid, description->agent.priority);
+					Agent* a;
+					a = env.get_TaskEnv(aid);
+					a->agent.AP = agentAMS.agent.aid;
+					Agent_Handle[description.subscribers] = aid;
+					description.subscribers++;
+					vTaskPrioritySet(aid, a->agent.priority);
 					vTaskResume(aid);
-					auto watcher = uxTaskPriorityGet(aid);
 					return NO_ERRORS;
 				}
 				else
@@ -315,10 +309,10 @@ namespace MAES
 			{
 				if (Agent_Handle[i] == aid)
 				{
-					Agent* description;
+					Agent* a;
 					suspend_agent(aid);
-					description = (Agent*)env.get_TaskEnv(aid);
-					description->agent.AP = NULL;
+					a = (Agent*)env.get_TaskEnv(aid);
+					a->agent.AP = NULL;
 
 					while (i < AGENT_LIST_SIZE - 1)
 					{
@@ -326,7 +320,7 @@ namespace MAES
 						i++;
 					}
 					Agent_Handle[AGENT_LIST_SIZE - 1] = NULL;
-					subscribers--;
+					description.subscribers--;
 					break;
 				}
 				i++;
@@ -355,17 +349,17 @@ namespace MAES
 
 			if (error == NO_ERRORS)
 			{
-				Agent* description;
+				Agent* a;
 				Mailbox_Handle m;
 
-				description = (Agent*)env.get_TaskEnv(aid);
-				description->agent.aid = NULL;
-
-				m = description->agent.mailbox_handle;
+				a = (Agent*)env.get_TaskEnv(aid);
+				a->agent.aid = NULL;
+				m = a->agent.mailbox_handle;
 				vQueueDelete(m);
 				vTaskDelete(aid);
 				systemVars* ptr_env = &env;
 				ptr_env->erase_TaskEnv(aid);
+				description.subscribers--;
 			}
 			return error;
 		}
@@ -409,10 +403,10 @@ namespace MAES
 		{
 			if (agent_search(aid))
 			{
-				Agent* description;
-				description = (Agent*)env.get_TaskEnv(aid);
+				Agent* a;
+				a = (Agent*)env.get_TaskEnv(aid);
 				vTaskResume(aid);
-				vTaskPrioritySet(aid, description->agent.priority);
+				vTaskPrioritySet(aid,a->agent.priority);
 				return NO_ERRORS;
 			}
 			else
@@ -468,6 +462,7 @@ namespace MAES
 			ptr_env->set_TaskEnv(a->agent.aid, a);
 		}
 	}
+
 	/***********************      AMS task overload      ***********************/
 	namespace
 	{

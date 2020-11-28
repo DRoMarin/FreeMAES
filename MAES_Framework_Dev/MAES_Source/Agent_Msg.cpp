@@ -155,8 +155,6 @@ namespace MAES
 	{
 		ptr_env = &env;
 		Agent* a = (Agent*)ptr_env->get_TaskEnv(caller);
-		auto watch = xQueueReceive(get_mailbox(caller), &msg.type, timeout);
-
 		if (xQueueReceive(get_mailbox(caller), &msg.type, timeout) != pdPASS)
 		{
 			return NO_RESPONSE;

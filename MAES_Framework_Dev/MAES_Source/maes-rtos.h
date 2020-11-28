@@ -16,8 +16,8 @@ namespace MAES
 {
 	using namespace std;
 
-#define Agent_AID TaskHandle_t       //
-#define Mailbox_Handle QueueHandle_t //
+#define Agent_AID TaskHandle_t       // Agent ID
+#define Mailbox_Handle QueueHandle_t // Agent's Mailbox Handle
 #define AGENT_LIST_SIZE 64
 #define MAX_RECEIVERS AGENT_LIST_SIZE - 1
 #define BEHAVIOUR_LIST_SIZE 8
@@ -96,6 +96,7 @@ namespace MAES
 	/******************************************************
 	*                     DEFINITIONS                     *
 	******************************************************/
+
 	// Organization Information
 	typedef struct
 	{
@@ -179,24 +180,6 @@ namespace MAES
 		Agent_AID AID();
 	};
 
-	/*------------------------------------------------------------------*/
-	class systemVars
-	{
-	public:
-		Agent* get_TaskEnv(Agent_AID aid);
-
-		void  set_TaskEnv(Agent_AID aid, Agent* agent_ptr);
-
-		void  erase_TaskEnv(Agent_AID aid);
-
-		map <TaskHandle_t, Agent*>  systemVars::getEnv();
-	private:
-		map <TaskHandle_t, Agent*> environment;
-	};
-
-	extern systemVars env;
-	/*------------------------------------------------------------------*/
-
 	//AMS_task namespace
 	namespace
 	{
@@ -216,7 +199,6 @@ namespace MAES
 	private:
 		Agent agentAMS;
 		Agent_AID Agent_Handle[AGENT_LIST_SIZE];
-		UBaseType_t subscribers;
 		AP_Description description;
 		USER_DEF_COND cond;
 		USER_DEF_COND* ptr_cond;
@@ -250,7 +232,6 @@ namespace MAES
 	private:
 		systemVars* ptr_env;
 		org_info description;
-		//bool isRegistered(Agent_AID aid);
 
 	public:
 		Agent_Organization(ORG_TYPE organization_type);
@@ -271,8 +252,7 @@ namespace MAES
 		ORG_TYPE get_org_type();
 		org_info get_info();
 		UBaseType_t get_size();
-		MSG_TYPE invite(Agent_Msg msg, UBaseType_t password,
-			Agent_AID target_agent, UBaseType_t timeout);
+		MSG_TYPE invite(Agent_Msg msg, UBaseType_t password, Agent_AID target_agent, UBaseType_t timeout);
 	};
 
 	// Message Class
@@ -343,4 +323,22 @@ namespace MAES
 		virtual void action() = 0;
 		virtual bool done();
 	};
+
+	/*-------------ENVIRONMENT CLASS-------------*/
+	class systemVars
+	{
+	public:
+		Agent* get_TaskEnv(Agent_AID aid);
+
+		void  set_TaskEnv(Agent_AID aid, Agent* agent_ptr);
+
+		void  erase_TaskEnv(Agent_AID aid);
+
+		map <TaskHandle_t, Agent*>  systemVars::getEnv();
+	private:
+		map <TaskHandle_t, Agent*> environment;
+	};
+
+	extern systemVars env;
+	/*-------------------------------------------*/
 } // namespace MAES
