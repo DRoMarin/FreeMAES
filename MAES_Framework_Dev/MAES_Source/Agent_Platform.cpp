@@ -4,11 +4,12 @@
 
 namespace MAES
 {
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent constructor                                               *
-	****************************************************************************/
-	Agent_Platform::Agent_Platform(char* name)
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: Agent constructor                                               
+	 * Comment: Initialize list of agent task handles to NULL.                   
+	 ******************************************************************************/
+	Agent_Platform::Agent_Platform(char *name)
 	{
 		agentAMS.agent.agent_name = name;
 		description.AP_name = name;
@@ -22,11 +23,12 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent constructor with User Conditions                          *
-	****************************************************************************/
-	Agent_Platform::Agent_Platform(char* name, USER_DEF_COND* user_cond)
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: Agent constructor with User Conditions                          
+	 * Comment: Initialize list of agent task handles to NULL.                   
+	 ******************************************************************************/
+	Agent_Platform::Agent_Platform(char *name, USER_DEF_COND *user_cond)
 	{
 		agentAMS.agent.agent_name = name;
 		ptr_cond = user_cond;
@@ -37,42 +39,43 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent Platform boot                                             *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                      
+	 * Function: Agent Platform boot                                              
+	 * Comment: Create AMS task with default stack. Must be only deployed im Main. 
+	 ******************************************************************************/
 	bool Agent_Platform::boot()
 	{
 		if (xTaskGetCurrentTaskHandle() == NULL)
 		{
-			AMSparameter* parametersForTask = &parameters;
+			AMSparameter *parametersForTask = &parameters;
 
 			// Mailbox = Queue
 
-			agentAMS.agent.mailbox_handle = xQueueCreate(1, sizeof(MSG_TYPE));
+			agentAMS.agent.mailbox_handle = xQueueCreate(1, sizeof(MsgObj));
 
 			// Task
 			parametersForTask->services = this;
 			parametersForTask->cond = ptr_cond;
 			agentAMS.resources.stackSize = 1024;
-#if configENABLE_MPU == 1 /*************************************************************/
+#if configENABLE_MPU == 1 // configSUPPORT_DYNAMIC_ALLOCATION == 0 /* IF STATIC ONLY */
 
 			StaticTask_t xTaskBuffer;
 			StackType_t xStack[agentAMS.resources.stackSize];
-			agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void*)&parameters, configMAX_PRIORITIES - 1, xStack, &xTaskBuffer);
+			agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, (configMAX_PRIORITIES - 1), xStack, &xTaskBuffer);
 
 #else
 
-			xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void*)&parametersForTask, (configMAX_PRIORITIES - 1), &agentAMS.agent.aid);
+			xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parametersForTask, (configMAX_PRIORITIES - 1), &agentAMS.agent.aid);
 
 #endif
-			systemVars* ptr_env = &env;
+			sysVars *ptr_env = &env;
 			description.AMS_AID = agentAMS.agent.aid;
 			ptr_env->set_TaskEnv(agentAMS.agent.aid, &agentAMS);
 
 			if (agentAMS.agent.aid != NULL)
 			{
-				for (auto const& [handle, agentPtr] : ptr_env->getEnv())
+				for (auto const &[handle, agentPtr] : ptr_env->getEnv())
 				{
 					if (handle == NULL || agentAMS.agent.aid == NULL)
 					{
@@ -94,69 +97,77 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent initialion                                                *
-	****************************************************************************/
-	void Agent_Platform::agent_init(Agent* a, void behaviour(void* pvParameters))
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: Agent initialion
+	 * Comment: Creates the task and mailbox (queue) for the agent, registers it
+	 * 			to the platform.
+	 * 			* a: Pointer of Agent to be initialized.
+	 * 			behaviour: Task to be executed by Agent.                                                
+	 ******************************************************************************/
+	void Agent_Platform::agent_init(Agent *a, void behaviour(void *pvParameters))
 	{
 		if (xTaskGetCurrentTaskHandle() == 0)
 		{
 			// Mailbox
-
-			a->agent.mailbox_handle = xQueueCreate(1, sizeof(MSG_TYPE));
+			a->agent.mailbox_handle = xQueueCreate(1, sizeof(MsgObj));
 
 			// Task
 			a->resources.function = behaviour;
 			a->resources.taskParameters = NULL;
 
-#if configENABLE_MPU == 1 /****************************************************************************************************************/
+#if configENABLE_MPU == 1 // configSUPPORT_DYNAMIC_ALLOCATION == 0 /* IF STATIC ONLY */
 			StaticTask_t xTaskBuffer;
 			StackType_t xStack[agentAMS.resources.stackSize];
-			a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void*)&parameters, 0, xStack, &xTaskBuffer);
+			a->agent.aid = xTaskCreateStatic(behaviour, a->agent.agent_name, a->resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
 #else
 			xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
 #endif
-			systemVars* ptr_env = &env;
+			sysVars *ptr_env = &env;
 			ptr_env->set_TaskEnv(a->agent.aid, a);
 			vTaskSuspend(a->agent.aid);
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent initialion with user arguments                            *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: Agent initialion
+	 * Comment: Creates the task and mailbox (queue) for the agent, registers it
+	 * 			to the platform.
+	 * 			* a: Pointer of Agent to be initialized.
+	 * 			behaviour: Task to be executed by Agent. 
+	 * 			pvParameters: Void pointer to parameters.                                              
+	 ******************************************************************************/
 
-	void Agent_Platform::agent_init(Agent* a, void behaviour(void* pvParameters), void* pvParameters)
+	void Agent_Platform::agent_init(Agent *a, void behaviour(void *pvParameters), void *pvParameters)
 	{
 		if (xTaskGetCurrentTaskHandle() == 0)
 		{
-			// Mailbox = Queue
-
-			a->agent.mailbox_handle = xQueueCreate(1, sizeof(MSG_TYPE));
+			// Mailbox
+			a->agent.mailbox_handle = xQueueCreate(1, sizeof(MsgObj));
 
 			// Task
 			a->resources.function = behaviour;
 			a->resources.taskParameters = pvParameters;
 
-#if configENABLE_MPU == 1
+#if configENABLE_MPU == 1 // configSUPPORT_DYNAMIC_ALLOCATION == 0 /* IF STATIC ONLY */
 			StaticTask_t xTaskBuffer;
-			StackType_t xStack[agentAMS.resources.stackSize];
-			a.agent.aid = xTaskCreateStatic(behaviour, a.agent.agent_name, a.resources.stackSize, (void*)&parameters, 0, xStack, &xTaskBuffer);
+			StackType_t xStack[a->resources.stackSize];
+			a->agent.aid = xTaskCreateStatic(behaviour, a->agent.agent_name, a->resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
 #else
-			xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 1, &a->agent.aid);
+			xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
 #endif
-			systemVars* ptr_env = &env;
+			sysVars *ptr_env = &env;
 			ptr_env->set_TaskEnv(a->agent.aid, a);
 			vTaskSuspend(a->agent.aid);
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent_search                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                      
+	 * Function: Agent_search  
+	 * Comment: Searches if agent is registered.                                                  
+	 ******************************************************************************/
 	bool Agent_Platform::agent_search(Agent_AID aid)
 	{
 		for (UBaseType_t i = 0; i < description.subscribers; i++)
@@ -169,37 +180,41 @@ namespace MAES
 		return false;
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent_wait                                                      *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: Agent_wait 
+	 * Comment: Makes the agent sleep for x ammount of ticks.                                                     
+	 ******************************************************************************/
 	void Agent_Platform::agent_wait(TickType_t ticks)
 	{
 		vTaskDelay(ticks);
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: Agent_yield                                                     *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: Agent_yield 
+	 * Comment: It yields the agent.                                                     
+	 ******************************************************************************/
 	void Agent_Platform::agent_yield()
 	{
 		taskYIELD();
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: get_running_agent                                               *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: get_running_agent
+	 * Comment: Returns the current running task.                                                 
+	 ******************************************************************************/
 	Agent_AID Agent_Platform::get_running_agent()
 	{
 		return xTaskGetCurrentTaskHandle();
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: get_state                                                       *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: get_state
+	 * Comment: Returns the current state of agent(task).                                                      
+	 ******************************************************************************/
 	AGENT_MODE Agent_Platform::get_state(Agent_AID aid)
 	{
 		if (agent_search(aid))
@@ -234,31 +249,35 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: get_Agent_description                                           *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: get_Agent_description
+	 * Comment: Returns the current state of agent(task).                                                                                          
+	 ******************************************************************************/
 	Agent_info Agent_Platform::get_Agent_description(Agent_AID aid)
 	{
-		Agent*a;
+		Agent *a;
 		a = env.get_TaskEnv(aid);
 
 		return a->agent;
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: get_AP_description                                              *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: get_AP_description
+	 * Comment: Returns AP description struct.                                             
+	 ******************************************************************************/
 	AP_Description Agent_Platform::get_AP_description()
 	{
 		return description;
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: register_agent                                                  *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: register_agent 
+	 * Comment: Registers agents into platform only if it is unique
+	 * 			and activates the task.                                                  
+	 ******************************************************************************/
 	ERROR_CODE Agent_Platform::register_agent(Agent_AID aid)
 	{
 		if (aid == NULL)
@@ -271,7 +290,7 @@ namespace MAES
 			{
 				if (description.subscribers < AGENT_LIST_SIZE)
 				{
-					Agent* a;
+					Agent *a;
 					a = env.get_TaskEnv(aid);
 					a->agent.AP = agentAMS.agent.aid;
 					Agent_Handle[description.subscribers] = aid;
@@ -296,10 +315,12 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: deregister_agent                                                *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: deregister_agent 
+	 * Comment: Deregisters the agent from the platform. When found, it shiftes
+	 * 			the rest of the list one position to the right.                                               
+	 ******************************************************************************/
 	ERROR_CODE Agent_Platform::deregister_agent(Agent_AID aid)
 	{
 		if (uxTaskPriorityGet(xTaskGetCurrentTaskHandle()) == configMAX_PRIORITIES - 1)
@@ -309,9 +330,9 @@ namespace MAES
 			{
 				if (Agent_Handle[i] == aid)
 				{
-					Agent* a;
+					Agent *a;
 					suspend_agent(aid);
-					a = (Agent*)env.get_TaskEnv(aid);
+					a = (Agent *)env.get_TaskEnv(aid);
 					a->agent.AP = NULL;
 
 					while (i < AGENT_LIST_SIZE - 1)
@@ -336,10 +357,12 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: kill_agent                                                      *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: kill_agent 
+	 * Comment:kills the agent, First it deregisters the agent and then
+	 * 		 					deletes the mailbox and the task.                                                    
+	 ******************************************************************************/
 	ERROR_CODE Agent_Platform::kill_agent(Agent_AID aid)
 	{
 		if (uxTaskPriorityGet(xTaskGetCurrentTaskHandle()) == configMAX_PRIORITIES - 1)
@@ -349,15 +372,15 @@ namespace MAES
 
 			if (error == NO_ERRORS)
 			{
-				Agent* a;
+				Agent *a;
 				Mailbox_Handle m;
 
-				a = (Agent*)env.get_TaskEnv(aid);
+				a = (Agent *)env.get_TaskEnv(aid);
 				a->agent.aid = NULL;
 				m = a->agent.mailbox_handle;
 				vQueueDelete(m);
 				vTaskDelete(aid);
-				systemVars* ptr_env = &env;
+				sysVars *ptr_env = &env;
 				ptr_env->erase_TaskEnv(aid);
 				description.subscribers--;
 			}
@@ -369,10 +392,11 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: suspend_agent                                                   *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: suspend_agent 
+	 * Comment: Suspends the excution of the task.                                                  
+	 ******************************************************************************/
 	ERROR_CODE Agent_Platform::suspend_agent(Agent_AID aid)
 	{
 		if (uxTaskPriorityGet(xTaskGetCurrentTaskHandle()) == configMAX_PRIORITIES - 1)
@@ -393,20 +417,21 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: resume_agent                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                     
+	 * Function: resume_agent
+	 * Comment: Resumes the excution of a suspended agent.                                                    
+	 ******************************************************************************/
 	ERROR_CODE Agent_Platform::resume_agent(Agent_AID aid)
 	{
 		if (uxTaskPriorityGet(xTaskGetCurrentTaskHandle()) == configMAX_PRIORITIES - 1)
 		{
 			if (agent_search(aid))
 			{
-				Agent* a;
-				a = (Agent*)env.get_TaskEnv(aid);
+				Agent *a;
+				a = (Agent *)env.get_TaskEnv(aid);
 				vTaskResume(aid);
-				vTaskPrioritySet(aid,a->agent.priority);
+				vTaskPrioritySet(aid, a->agent.priority);
 				return NO_ERRORS;
 			}
 			else
@@ -420,16 +445,17 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Platform                                                     *
-	* Function: resume_agent                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Platform                                                    
+	 * Function: restart
+	 * Comment: Deletes and recreates the agent.                                                   
+	 ******************************************************************************/
 	void Agent_Platform::restart(Agent_AID aid)
 	{
 		if (uxTaskPriorityGet(xTaskGetCurrentTaskHandle()) == configMAX_PRIORITIES - 1)
 		{
-			Agent* a;
-			a = (Agent*)env.get_TaskEnv(aid);
+			Agent *a;
+			a = (Agent *)env.get_TaskEnv(aid);
 			Mailbox_Handle m;
 
 			// delete Task and Mailbox
@@ -437,7 +463,7 @@ namespace MAES
 			m = a->agent.mailbox_handle;
 			vTaskDelete(aid);
 			vQueueDelete(m);
-			systemVars* ptr_env = &env;
+			sysVars *ptr_env = &env;
 			ptr_env->erase_TaskEnv(aid);
 
 			// Mailbox = Queue
@@ -463,14 +489,14 @@ namespace MAES
 		}
 	}
 
-	/***********************      AMS task overload      ***********************/
+	/*****************************      AMS task      *****************************/
 	namespace
 	{
-		void AMS_task(void* pvParameters)
+		void AMS_task(void *pvParameters)
 		{
-			AMSparameter* amsParameters = &parameters;
-			Agent_Platform* services = amsParameters->services;
-			USER_DEF_COND* cond = amsParameters->cond;
+			AMSparameter *amsParameters = &parameters;
+			Agent_Platform *services = amsParameters->services;
+			USER_DEF_COND *cond = amsParameters->cond;
 
 			Agent_Msg msg;
 

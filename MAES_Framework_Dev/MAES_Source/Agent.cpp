@@ -1,9 +1,4 @@
 #include "maes-rtos.h"
-#include <iostream>
-#include <map>
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
 
 /*    Author: Daniel Rojas Marín    */
 
@@ -38,7 +33,8 @@ namespace MAES
 
 	/****************************************************************************
 	* Class: Agent                                                              *
-	* Function: get Agent's aid                                                 *
+	* Function: AID                                                             *
+	* Return: Agent's aid                                                       *
 	****************************************************************************/
 	Agent_AID Agent::AID()
 	{

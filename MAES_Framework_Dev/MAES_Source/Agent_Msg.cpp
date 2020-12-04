@@ -9,10 +9,12 @@
 
 namespace MAES
 {
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: Agent constructor                                               *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: Agent constructor
+	 * Comment: The msg object is assign to the task(agent) calling it
+	 * 			the receiver list is initialized empty.                                               
+	 ******************************************************************************/
 	Agent_Msg::Agent_Msg()
 	{
 		caller = xTaskGetCurrentTaskHandle();
@@ -20,10 +22,11 @@ namespace MAES
 		subscribers = 0;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: isRegistered                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: isRegistered   
+	 * Comment: Check if both agents are registered on the same platform.                                                 
+	 ******************************************************************************/
 	bool Agent_Msg::isRegistered(Agent_AID aid)
 	{
 		ptr_env = &env;
@@ -40,10 +43,11 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: get_mailbox                                                     *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: get_mailbox 
+	 * Comment: Return agent's mailbox handle.                                                    
+	 ******************************************************************************/
 	Mailbox_Handle Agent_Msg::get_mailbox(Agent_AID aid)
 	{
 		Agent* description;
@@ -52,10 +56,11 @@ namespace MAES
 		return description->agent.mailbox_handle;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: add_receiver                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: add_receiver 
+	 * Comment: Add agent to msg's receivers list.                                                   
+	 ******************************************************************************/
 	ERROR_CODE Agent_Msg::add_receiver(Agent_AID aid_receiver)
 	{
 		if (isRegistered(aid_receiver))
@@ -81,10 +86,11 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: remove_receiver                                                 *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: remove_receiver  
+	 * Comment: Remove agent from msg's receivers list.                                              
+	 ******************************************************************************/
 	ERROR_CODE Agent_Msg::remove_receiver(Agent_AID aid)
 	{
 		UBaseType_t i = 0;
@@ -113,10 +119,11 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: clear_all_receivers                                             *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: clear_all_receivers  
+	 * Comment: Clear list.                                           
+	 ******************************************************************************/
 	void Agent_Msg::clear_all_receiver()
 	{
 		UBaseType_t i = 0;
@@ -127,10 +134,11 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: refersh_list                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: refersh_list 
+	 * Comments: Refresh list with only resgistered agents in the same org.                                                    
+	 ******************************************************************************/
 	void Agent_Msg::refresh_list()
 	{
 		ptr_env = &env;
@@ -147,28 +155,30 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: receive                                                         *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: receive
+	 * Comment: Get message from mailbox.                                                         
+	 ******************************************************************************/
 	MSG_TYPE Agent_Msg::receive(TickType_t timeout)
 	{
 		ptr_env = &env;
 		Agent* a = (Agent*)ptr_env->get_TaskEnv(caller);
-		if (xQueueReceive(get_mailbox(caller), &msg.type, timeout) != pdPASS)
+		if (xQueueReceive(get_mailbox(caller), &msg, timeout) != pdPASS)
 		{
 			return NO_RESPONSE;
 		}
 		else
-		{
+		{	
 			return msg.type;
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: send                                                            *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: send  
+	 * Comment: Send msg to target agent's mailbox.                                                          
+	 ******************************************************************************/
 	ERROR_CODE Agent_Msg::send(Agent_AID aid_receiver, TickType_t timeout)
 	{
 		ptr_env = &env;
@@ -187,7 +197,7 @@ namespace MAES
 		{
 			if (agent_caller->agent.org == NULL && agent_receiver->agent.org == NULL)
 			{
-				if (xQueueSend(get_mailbox(aid_receiver), &msg.type, timeout) != pdPASS)
+				if (xQueueSend(get_mailbox(aid_receiver), &msg, timeout) != pdPASS)
 				{
 					return TIMEOUT;
 				}
@@ -200,7 +210,7 @@ namespace MAES
 			{
 				if (agent_caller->agent.org->org_type == TEAM && agent_caller->agent.role == PARTICIPANT || (agent_caller->agent.org->org_type == HIERARCHY && agent_receiver->agent.role == MODERATOR))
 				{
-					if (xQueueSend(get_mailbox(aid_receiver), &msg.type, timeout) != pdPASS)
+					if (xQueueSend(get_mailbox(aid_receiver), &msg, timeout) != pdPASS)
 					{
 						return TIMEOUT;
 					}
@@ -216,7 +226,7 @@ namespace MAES
 			}
 			else if (agent_caller->agent.affiliation == ADMIN || agent_caller->agent.role == OWNER)
 			{
-				if (xQueueSend(get_mailbox(aid_receiver), &msg.type, timeout) != pdPASS)
+				if (xQueueSend(get_mailbox(aid_receiver), &msg, timeout) != pdPASS)
 				{
 					return TIMEOUT;
 				}
@@ -232,10 +242,11 @@ namespace MAES
 		}
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: send                                                            *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: send  
+	 * Comment: Send to all receivers.                                                          
+	 ******************************************************************************/
 	ERROR_CODE Agent_Msg::send()
 	{
 		UBaseType_t i = 0;
@@ -254,74 +265,86 @@ namespace MAES
 		return error;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: set_msg_type                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: set_msg_type  
+	 * Comment: Set msg type according to FIPA ACL.	                                                 
+	 ******************************************************************************/
 	void Agent_Msg::set_msg_type(MSG_TYPE msg_type)
 	{
 		msg.type = msg_type;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: set_msg_content                                                 *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: set_msg_content  
+	 * Comment: Set msg body according to FIPA ACL                                                
+	 ******************************************************************************/
 	void Agent_Msg::set_msg_content(char* msg_content)
 	{
 		msg.content = msg_content;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: get_msg                                                         *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                     
+	 * Function: get_msg 
+	 * Comment: Get msg                                                       
+	 ******************************************************************************/
 	MsgObj* Agent_Msg::get_msg()
 	{
 		MsgObj* ptr = &msg;
 		return ptr;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: get_msg_type                                                    *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: get_msg_type 
+	 * Comment: Get msg type                                                 
+	 ******************************************************************************/
 	MSG_TYPE Agent_Msg::get_msg_type()
 	{
 		return msg.type;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: get_msg_content                                                 *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: get_msg_content   
+	 * Comment: Get msg content                                               
+	 ******************************************************************************/
 	char* Agent_Msg::get_msg_content()
 	{
 		return msg.content;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: get_sender                                                      *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: get_sender  
+	 * Comment: Get sender                                                     
+	 ******************************************************************************/
 	Agent_AID Agent_Msg::get_sender()
 	{
 		return msg.sender_agent;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Function: get_target_agent                                                *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Function: get_target_agent
+	 * Comment: Get target agent's aid                                               
+	 ******************************************************************************/
 	Agent_AID Agent_Msg::get_target_agent()
 	{
 		return msg.target_agent;
 	}
 
-	/****************************************************************************
-	* Class: Agent Message                                                      *
-	* Functions: agent states messages                                          *
-	****************************************************************************/
+	/******************************************************************************
+	 * Class: Agent Message                                                      
+	 * Functions: agent states messages
+	 * Comment: Request the AP services: registration 
+	 * 							   		 deregistration
+	 * 							   		 suspend
+	 * 							   		 resume
+	 * 							   		 kill                                          
+	 ******************************************************************************/
 	ERROR_CODE Agent_Msg::registration(Agent_AID target_agent)
 	{
 		ptr_env = &env;
@@ -347,7 +370,7 @@ namespace MAES
 				//Get the AMS info*/
 				AMS = agent_caller->agent.AP;
 				/*Sending request*/
-				if (xQueueSend(get_mailbox(AMS), &msg.type, portMAX_DELAY) != pdPASS)
+				if (xQueueSend(get_mailbox(AMS), &msg, portMAX_DELAY) != pdPASS)
 				{
 					return INVALID;
 				}
@@ -392,7 +415,7 @@ namespace MAES
 				//Get the AMS info*/
 				AMS = agent_caller->agent.AP;
 				/*Sending request*/
-				if (xQueueSend(get_mailbox(AMS), &msg.type, portMAX_DELAY) != pdPASS)
+				if (xQueueSend(get_mailbox(AMS), &msg, portMAX_DELAY) != pdPASS)
 				{
 					return INVALID;
 				}
@@ -437,7 +460,7 @@ namespace MAES
 				//Get the AMS info*/
 				AMS = agent_caller->agent.AP;
 				/*Sending request*/
-				if (xQueueSend(get_mailbox(AMS), &msg.type, portMAX_DELAY) != pdPASS)
+				if (xQueueSend(get_mailbox(AMS), &msg, portMAX_DELAY) != pdPASS)
 				{
 					return INVALID;
 				}
@@ -482,7 +505,7 @@ namespace MAES
 				//Get the AMS info*/
 				AMS = agent_caller->agent.AP;
 				/*Sending request*/
-				if (xQueueSend(get_mailbox(AMS), &msg.type, portMAX_DELAY) != pdPASS)
+				if (xQueueSend(get_mailbox(AMS), &msg, portMAX_DELAY) != pdPASS)
 				{
 					return INVALID;
 				}
@@ -527,7 +550,7 @@ namespace MAES
 				//Get the AMS info*/
 				AMS = agent_caller->agent.AP;
 				/*Sending request*/
-				if (xQueueSend(get_mailbox(AMS), &msg.type, portMAX_DELAY) != pdPASS)
+				if (xQueueSend(get_mailbox(AMS), &msg, portMAX_DELAY) != pdPASS)
 				{
 					return INVALID;
 				}
@@ -561,7 +584,7 @@ namespace MAES
 
 		AMS = agent_caller->agent.AP;
 
-		if (xQueueSend(get_mailbox(AMS), &msg.type, portMAX_DELAY) != pdPASS)
+		if (xQueueSend(get_mailbox(AMS), &msg, portMAX_DELAY) != pdPASS)
 		{
 			return INVALID;
 		}

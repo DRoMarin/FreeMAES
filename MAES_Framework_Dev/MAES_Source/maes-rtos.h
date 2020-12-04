@@ -1,10 +1,10 @@
-/**********************************************************
-*   MAES is a framework for Real Time Embedded Systems    *
-*   designed by C. Chan-Zheng at TU Delft.                *
-*   This is a library which implements the framework      *
-*   components to be compatible with FreeRTOS developed   *
-*   by D. Rojas Marin at ITCR.                            *
-**********************************************************/
+/***********************************************************
+ *   MAES is a framework for Real Time Embedded Systems    *
+ *   designed by C. Chan-Zheng at TU Delft.                *
+ *   This is a library which implements the framework      *
+ *   components to be compatible with FreeRTOS developed   *
+ *   by D. Rojas Marin at ITCR.                            *
+************************************************************/
 
 #include <iostream>
 #include <map>
@@ -16,12 +16,16 @@ namespace MAES
 {
 	using namespace std;
 
-#define Agent_AID TaskHandle_t       // Agent ID
-#define Mailbox_Handle QueueHandle_t // Agent's Mailbox Handle
-#define AGENT_LIST_SIZE 64
-#define MAX_RECEIVERS AGENT_LIST_SIZE - 1
-#define BEHAVIOUR_LIST_SIZE 8
-#define ORGANIZATIONS_SIZE 16
+#define Agent_AID TaskHandle_t		        // Agent ID
+#define Mailbox_Handle QueueHandle_t        // Agent's Mailbox Handle
+#define AGENT_LIST_SIZE 64					// Maximum Agents per platform
+#define MAX_RECEIVERS AGENT_LIST_SIZE - 1	// Maximum receivers available for any agent
+#define BEHAVIOUR_LIST_SIZE 8				//
+#define ORGANIZATIONS_SIZE 16				// Maximum Members for org
+
+	/*******************************************************
+	 *                        ENUMS                        *
+	 *******************************************************/
 
 	enum MSG_TYPE
 	{
@@ -93,11 +97,11 @@ namespace MAES
 		TEAM,
 	};
 
-	/******************************************************
-	*                     DEFINITIONS                     *
-	******************************************************/
+	/*******************************************************
+	 *                     DEFINITIONS                     *
+	 *******************************************************/
 
-	// Organization Information
+	 // Organization Information
 	typedef struct
 	{
 		ORG_TYPE org_type;
@@ -148,11 +152,12 @@ namespace MAES
 		UBaseType_t subscribers;
 	} AP_Description;
 
-	/******************************************************
-	*                       CLASSES                       *
-	******************************************************/
+	/*******************************************************
+	 *                       CLASSES                       *
+	 *******************************************************/
 
-	// User Conditions
+
+	 // User Conditions
 	class USER_DEF_COND
 	{
 	public:
@@ -180,7 +185,23 @@ namespace MAES
 		Agent_AID AID();
 	};
 
-	//AMS_task namespace
+	//Environment Class
+
+	class sysVars
+	{
+	public:
+		Agent* get_TaskEnv(Agent_AID aid);
+		void set_TaskEnv(Agent_AID aid, Agent* agent_ptr);
+		void erase_TaskEnv(Agent_AID aid);
+		map<TaskHandle_t, Agent*> getEnv();
+
+	private:
+		map<TaskHandle_t, Agent*> environment;
+	};
+
+	extern sysVars env;
+
+	// AMS_task namespace
 	namespace
 	{
 		typedef struct
@@ -230,7 +251,7 @@ namespace MAES
 	class Agent_Organization
 	{
 	private:
-		systemVars* ptr_env;
+		sysVars* ptr_env;
 		org_info description;
 
 	public:
@@ -265,7 +286,7 @@ namespace MAES
 		Agent_AID caller;
 		bool isRegistered(Agent_AID aid);
 		Mailbox_Handle get_mailbox(Agent_AID aid);
-		systemVars* ptr_env;
+		sysVars* ptr_env;
 		// MAILBOX
 	public:
 		Agent_Msg();
@@ -324,21 +345,4 @@ namespace MAES
 		virtual bool done();
 	};
 
-	/*-------------ENVIRONMENT CLASS-------------*/
-	class systemVars
-	{
-	public:
-		Agent* get_TaskEnv(Agent_AID aid);
-
-		void  set_TaskEnv(Agent_AID aid, Agent* agent_ptr);
-
-		void  erase_TaskEnv(Agent_AID aid);
-
-		map <TaskHandle_t, Agent*>  systemVars::getEnv();
-	private:
-		map <TaskHandle_t, Agent*> environment;
-	};
-
-	extern systemVars env;
-	/*-------------------------------------------*/
 } // namespace MAES
