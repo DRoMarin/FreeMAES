@@ -25,21 +25,21 @@ public:
 	void action() {
 		printf("Enviando mensaje... \n");
 		msg.send();
-		vTaskDelay(pdMS_TO_TICKS(500));
+		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 };
 
 void write(void* pvParameters) {
 	writingBehaviour b;
-	for (;;)
-	{
-		b.execute();
-	}
+
+	b.execute();
+
 }
 
 class readingBehaviour :public CyclicBehaviour {
 public:
 	void action() {
+		printf("Esperando... \n");
 		msg.receive(portMAX_DELAY);
 		printf("Mensaje recibido: ¡Hola MAES! \n");
 	}
@@ -47,13 +47,12 @@ public:
 
 void read(void* pvParameters) {
 	readingBehaviour b;
-	for (;;)
-	{
-		b.execute();
-	}
+
+	b.execute();
 }
 
 Agent_Platform AP("windows");
+
 
 int sender_receiver() {
 

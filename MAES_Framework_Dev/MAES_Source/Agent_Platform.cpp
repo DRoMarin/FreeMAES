@@ -57,7 +57,7 @@ namespace MAES
 			// Task
 			parametersForTask->services = this;
 			parametersForTask->cond = ptr_cond;
-			agentAMS.resources.stackSize = 1024;
+			agentAMS.resources.stackSize = configMINIMAL_STACK_SIZE; /*--------------------------------------------------------*/
 #if configENABLE_MPU == 1 // configSUPPORT_DYNAMIC_ALLOCATION == 0 /* IF STATIC ONLY */
 
 			StaticTask_t xTaskBuffer;

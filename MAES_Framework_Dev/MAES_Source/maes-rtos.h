@@ -318,9 +318,10 @@ namespace MAES
 	class Generic_Behaviour
 	{
 	public:
+		void* taskParameters;
 		Agent_Msg msg;
-		virtual void action() = 0;
 		Generic_Behaviour();
+		virtual void action() = 0;
 		virtual void setup();
 		virtual bool done();
 		virtual bool failure_detection();

@@ -55,7 +55,8 @@ public:
 		msg.add_receiver(Referee.AID());
 	}
 	void action() {
-		printf("Rock, Paper, Scissors... \n");
+		printf(AP_RPS.get_Agent_description(AP_RPS.get_running_agent()).agent_name);
+		printf(": Rock, Paper, Scissors... \n");
 		AP_RPS.agent_wait(pdMS_TO_TICKS(10));
 		auto num = getRandom();
 		char* bet;
@@ -108,6 +109,7 @@ public:
 			{1, 0, 2},
 			{2, 1, 0}
 		};
+		printf("\nREFEREE READY \n");
 		while (true)
 		{
 			msg.receive(portMAX_DELAY);
@@ -138,15 +140,18 @@ public:
 		switch (winner[choiceA][choiceB])
 		{
 		case 0:
-			printf("DRAW!\n");
+			printf(AP_RPS.get_Agent_description(AP_RPS.get_running_agent()).agent_name);
+			printf(": DRAW!\n");
 			break;
 
 		case 1:
-			printf("PLAYER A WINS!\n");
+			printf(AP_RPS.get_Agent_description(AP_RPS.get_running_agent()).agent_name);
+			printf(": PLAYER A WINS!\n");
 			break;
 
 		case 2:
-			printf("PLAYER B WINS!\n");
+			printf(AP_RPS.get_Agent_description(AP_RPS.get_running_agent()).agent_name);
+			printf(": PLAYER B WINS!\n");
 			break;
 
 		default:
@@ -167,6 +172,7 @@ void watchover(void* pvParameters) {
 		b.execute();
 	}
 }
+
 
 /*----------------------------------MAIN----------------------------------*/
 int rock_paper_scissors() {
