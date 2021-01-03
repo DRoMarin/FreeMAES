@@ -1,11 +1,11 @@
-#define APP1 1
-#define APP2 2
-#define APP3 3
-#define SELECTED_DEMO APP2
+#define APP1 1 //Sender-Receiver
+#define APP2 2 //Rock, Paper, Scissors
+#define APP3 3 //Telemetry Demo
+#define SELECTED_DEMO APP1
 
 extern int sender_receiver();
 extern int rock_paper_scissors();
-
+extern int telemetry();
 using namespace std;
 
 int main()
@@ -15,7 +15,7 @@ int main()
 #elif SELECTED_DEMO == APP2
 	rock_paper_scissors();
 #elif SELECTED_DEMO == APP3
-	sender_receiver();
+	telemetry();
 #else
 	printf("NO DEMO APP SELECTED");
 #endif // SELECTED_APP == APP1

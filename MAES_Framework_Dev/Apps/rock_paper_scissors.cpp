@@ -11,6 +11,7 @@
 #include <random>
 
 using namespace MAES;
+using namespace std;
 
 /*Agentes*/
 Agent A("Player A", 1, 1024);

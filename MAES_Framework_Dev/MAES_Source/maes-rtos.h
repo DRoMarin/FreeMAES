@@ -6,15 +6,15 @@
  *   by D. Rojas Marin at ITCR.                            *
 ************************************************************/
 
-#include <iostream>
-#include <map>
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+#include <stdio.h>
+#include <string.h>
 
 namespace MAES
 {
-	using namespace std;
 
 #define Agent_AID TaskHandle_t		        // Agent ID
 #define Mailbox_Handle QueueHandle_t        // Agent's Mailbox Handle
@@ -156,7 +156,6 @@ namespace MAES
 	 *                       CLASSES                       *
 	 *******************************************************/
 
-
 	 // User Conditions
 	class USER_DEF_COND
 	{
@@ -184,8 +183,13 @@ namespace MAES
 		Agent(char* name, UBaseType_t pri, uint16_t sizeStack);
 		Agent_AID AID();
 	};
-
+	
 	//Environment Class
+
+	typedef struct{
+		Agent_AID first;
+		Agent * second;
+		}sysVar;
 
 	class sysVars
 	{
@@ -193,26 +197,13 @@ namespace MAES
 		Agent* get_TaskEnv(Agent_AID aid);
 		void set_TaskEnv(Agent_AID aid, Agent* agent_ptr);
 		void erase_TaskEnv(Agent_AID aid);
-		map<TaskHandle_t, Agent*> getEnv();
+		sysVar * getEnv();
 
 	private:
-		map<TaskHandle_t, Agent*> environment;
+		sysVar environment[AGENT_LIST_SIZE];
 	};
 
 	extern sysVars env;
-
-	// AMS_task namespace
-	namespace
-	{
-		typedef struct
-		{
-			Agent_Platform* services;
-			USER_DEF_COND* cond;
-		} AMSparameter;
-
-		AMSparameter parameters;
-		void AMS_task(void* pvParameters);
-	} // namespace
 
 	// Agent Platform Class
 	class Agent_Platform
@@ -246,35 +237,19 @@ namespace MAES
 		ERROR_CODE resume_agent(Agent_AID aid);
 		void restart(Agent_AID aid);
 	};
-
-	// Agent Organization Class
-	class Agent_Organization
+	
+	// AMS_task namespace
+	namespace
 	{
-	private:
-		sysVars* ptr_env;
-		org_info description;
-
-	public:
-		Agent_Organization(ORG_TYPE organization_type);
-		ERROR_CODE create();
-		ERROR_CODE destroy();
-		ERROR_CODE isMember(Agent_AID aid);
-		ERROR_CODE isBanned(Agent_AID aid);
-		ERROR_CODE change_owner(Agent_AID aid);
-		ERROR_CODE set_admin(Agent_AID aid);
-		ERROR_CODE set_moderator(Agent_AID aid);
-		ERROR_CODE add_agent(Agent_AID aid);
-		ERROR_CODE kick_agent(Agent_AID aid);
-		ERROR_CODE ban_agent(Agent_AID aid);
-		ERROR_CODE remove_ban(Agent_AID aid);
-		void clear_ban_list();
-		ERROR_CODE set_participant(Agent_AID aid);
-		ERROR_CODE set_visitor(Agent_AID aid);
-		ORG_TYPE get_org_type();
-		org_info get_info();
-		UBaseType_t get_size();
-		MSG_TYPE invite(Agent_Msg msg, UBaseType_t password, Agent_AID target_agent, UBaseType_t timeout);
-	};
+		typedef struct
+		{
+			Agent_Platform* services;
+			USER_DEF_COND* cond;
+		} AMSparameter;
+		
+		//AMSparameter parameters;
+		void AMS_task(void* pvParameters);
+	} // namespace
 
 	// Message Class
 	class Agent_Msg
@@ -313,6 +288,36 @@ namespace MAES
 		ERROR_CODE kill(Agent_AID target_agent);
 		ERROR_CODE restart();
 	};
+	
+		// Agent Organization Class
+	class Agent_Organization
+	{
+	private:
+		sysVars* ptr_env;
+		org_info description;
+
+	public:
+		Agent_Organization(ORG_TYPE organization_type);
+		ERROR_CODE create();
+		ERROR_CODE destroy();
+		ERROR_CODE isMember(Agent_AID aid);
+		ERROR_CODE isBanned(Agent_AID aid);
+		ERROR_CODE change_owner(Agent_AID aid);
+		ERROR_CODE set_admin(Agent_AID aid);
+		ERROR_CODE set_moderator(Agent_AID aid);
+		ERROR_CODE add_agent(Agent_AID aid);
+		ERROR_CODE kick_agent(Agent_AID aid);
+		ERROR_CODE ban_agent(Agent_AID aid);
+		ERROR_CODE remove_ban(Agent_AID aid);
+		void clear_ban_list();
+		ERROR_CODE set_participant(Agent_AID aid);
+		ERROR_CODE set_visitor(Agent_AID aid);
+		ORG_TYPE get_org_type();
+		org_info get_info();
+		UBaseType_t get_size();
+		MSG_TYPE invite(Agent_Msg msg, UBaseType_t password, Agent_AID target_agent, UBaseType_t timeout);
+	};
+
 
 	// Behaviour Related Classes
 	class Generic_Behaviour

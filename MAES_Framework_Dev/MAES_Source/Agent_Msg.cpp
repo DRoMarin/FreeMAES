@@ -1,6 +1,4 @@
 #include "maes-rtos.h"
-#include <iostream>
-#include <map>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -163,7 +161,7 @@ namespace MAES
 	MSG_TYPE Agent_Msg::receive(TickType_t timeout)
 	{
 		ptr_env = &env;
-		Agent* a = (Agent*)ptr_env->get_TaskEnv(caller);
+		//Agent* a = (Agent*)ptr_env->get_TaskEnv(caller);
 		if (xQueueReceive(get_mailbox(caller), &msg, timeout) != pdPASS)
 		{
 			return NO_RESPONSE;
@@ -208,7 +206,7 @@ namespace MAES
 			}
 			else if (agent_caller->agent.org == agent_receiver->agent.org)
 			{
-				if (agent_caller->agent.org->org_type == TEAM && agent_caller->agent.role == PARTICIPANT || (agent_caller->agent.org->org_type == HIERARCHY && agent_receiver->agent.role == MODERATOR))
+				if (((agent_caller->agent.org->org_type == TEAM ) && (agent_caller->agent.role == PARTICIPANT)) || ((agent_caller->agent.org->org_type == HIERARCHY) && (agent_receiver->agent.role == MODERATOR)))
 				{
 					if (xQueueSend(get_mailbox(aid_receiver), &msg, timeout) != pdPASS)
 					{
@@ -224,7 +222,7 @@ namespace MAES
 					return INVALID;
 				}
 			}
-			else if (agent_caller->agent.affiliation == ADMIN || agent_caller->agent.role == OWNER)
+			else if ((agent_caller->agent.affiliation == ADMIN) || (agent_caller->agent.affiliation == OWNER))
 			{
 				if (xQueueSend(get_mailbox(aid_receiver), &msg, timeout) != pdPASS)
 				{
@@ -358,7 +356,7 @@ namespace MAES
 		{
 			return HANDLE_NULL;
 		}
-		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.role == OWNER || agent_caller->agent.role == ADMIN)))
+		else if ((agent_caller->agent.org == NULL) || (agent_caller->agent.org != NULL && ((agent_caller->agent.affiliation == OWNER) || (agent_caller->agent.affiliation == ADMIN))))
 		{
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
@@ -403,7 +401,7 @@ namespace MAES
 		{
 			return HANDLE_NULL;
 		}
-		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.role == OWNER || agent_caller->agent.role == ADMIN)))
+		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.affiliation == OWNER || agent_caller->agent.affiliation == ADMIN)))
 		{
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
@@ -448,7 +446,7 @@ namespace MAES
 		{
 			return HANDLE_NULL;
 		}
-		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.role == OWNER || agent_caller->agent.role == ADMIN)))
+		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.affiliation == OWNER || agent_caller->agent.affiliation == ADMIN)))
 		{
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
@@ -493,7 +491,7 @@ namespace MAES
 		{
 			return HANDLE_NULL;
 		}
-		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.role == OWNER || agent_caller->agent.role == ADMIN)))
+		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.affiliation == OWNER || agent_caller->agent.affiliation == ADMIN)))
 		{
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
@@ -538,7 +536,7 @@ namespace MAES
 		{
 			return HANDLE_NULL;
 		}
-		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.role == OWNER || agent_caller->agent.role == ADMIN)))
+		else if (agent_caller->agent.org == NULL || (agent_caller->agent.org != NULL && (agent_caller->agent.affiliation == OWNER || agent_caller->agent.affiliation == ADMIN)))
 		{
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{

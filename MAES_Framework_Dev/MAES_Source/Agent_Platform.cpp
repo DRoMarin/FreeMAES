@@ -13,7 +13,7 @@ namespace MAES
 	{
 		agentAMS.agent.agent_name = name;
 		description.AP_name = name;
-		description.subscribers;
+		description.subscribers = 0;
 		ptr_cond = &cond;
 
 		agentAMS.agent.priority = configMAX_PRIORITIES - 1;
@@ -44,6 +44,8 @@ namespace MAES
 	 * Function: Agent Platform boot                                              
 	 * Comment: Create AMS task with default stack. Must be only deployed im Main. 
 	 ******************************************************************************/
+	AMSparameter parameters;
+	
 	bool Agent_Platform::boot()
 	{
 		if (xTaskGetCurrentTaskHandle() == NULL)
@@ -58,30 +60,28 @@ namespace MAES
 			parametersForTask->services = this;
 			parametersForTask->cond = ptr_cond;
 			agentAMS.resources.stackSize = configMINIMAL_STACK_SIZE; /*--------------------------------------------------------*/
-#if configENABLE_MPU == 1 // configSUPPORT_DYNAMIC_ALLOCATION == 0 /* IF STATIC ONLY */
-
-			StaticTask_t xTaskBuffer;
-			StackType_t xStack[agentAMS.resources.stackSize];
-			agentAMS.agent.aid = xTaskCreateStatic(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parameters, (configMAX_PRIORITIES - 1), xStack, &xTaskBuffer);
-
-#else
 
 			xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parametersForTask, (configMAX_PRIORITIES - 1), &agentAMS.agent.aid);
 
-#endif
 			sysVars *ptr_env = &env;
 			description.AMS_AID = agentAMS.agent.aid;
 			ptr_env->set_TaskEnv(agentAMS.agent.aid, &agentAMS);
 
 			if (agentAMS.agent.aid != NULL)
 			{
-				for (auto const &[handle, agentPtr] : ptr_env->getEnv())
-				{
-					if (handle == NULL || agentAMS.agent.aid == NULL)
+				sysVar * element;
+				UBaseType_t i = 0;
+				
+				while(i < AGENT_LIST_SIZE){
+					
+					element = ptr_env->getEnv();
+					
+					if ((element[i].first == NULL) || (agentAMS.agent.aid == NULL))
 					{
 						break;
 					}
-					register_agent(handle);
+					register_agent(element[i].first);
+					i++;
 				}
 				return NO_ERRORS;
 			}
@@ -116,13 +116,9 @@ namespace MAES
 			a->resources.function = behaviour;
 			a->resources.taskParameters = NULL;
 
-#if configENABLE_MPU == 1 // configSUPPORT_DYNAMIC_ALLOCATION == 0 /* IF STATIC ONLY */
-			StaticTask_t xTaskBuffer;
-			StackType_t xStack[agentAMS.resources.stackSize];
-			a->agent.aid = xTaskCreateStatic(behaviour, a->agent.agent_name, a->resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
-#else
+
 			xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
-#endif
+
 			sysVars *ptr_env = &env;
 			ptr_env->set_TaskEnv(a->agent.aid, a);
 			vTaskSuspend(a->agent.aid);
@@ -150,13 +146,9 @@ namespace MAES
 			a->resources.function = behaviour;
 			a->resources.taskParameters = pvParameters;
 
-#if configENABLE_MPU == 1 // configSUPPORT_DYNAMIC_ALLOCATION == 0 /* IF STATIC ONLY */
-			StaticTask_t xTaskBuffer;
-			StackType_t xStack[a->resources.stackSize];
-			a->agent.aid = xTaskCreateStatic(behaviour, a->agent.agent_name, a->resources.stackSize, (void *)&parameters, 0, xStack, &xTaskBuffer);
-#else
+
 			xTaskCreate(behaviour, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
-#endif
+
 			sysVars *ptr_env = &env;
 			ptr_env->set_TaskEnv(a->agent.aid, a);
 			vTaskSuspend(a->agent.aid);
@@ -351,10 +343,11 @@ namespace MAES
 				return NOT_FOUND;
 			}
 		}
-		else
-		{
-			return NO_ERRORS;
-		}
+		//else
+		//{
+			//return NO_ERRORS;
+		//}
+		return NO_ERRORS;
 	}
 
 	/******************************************************************************
@@ -395,7 +388,7 @@ namespace MAES
 	/******************************************************************************
 	 * Class: Agent Platform                                                     
 	 * Function: suspend_agent 
-	 * Comment: Suspends the excution of the task.                                                  
+	 * Comment: Suspends the execution of the task.                                                  
 	 ******************************************************************************/
 	ERROR_CODE Agent_Platform::suspend_agent(Agent_AID aid)
 	{
@@ -472,17 +465,6 @@ namespace MAES
 
 			// Task
 
-#if configENABLE_MPU == 1
-			{
-				StaticTask_t xTaskBuffer;
-				StackType_t xStack[agentAMS.resources.stackSize];
-				a.agent.aid = xTaskCreateStatic(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, xStack, &xTaskBuffer);
-			}
-#else
-			{
-				xTaskCreate(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
-			}
-#endif
 
 			xTaskCreate(a->resources.function, a->agent.agent_name, a->resources.stackSize, a->resources.taskParameters, 0, &a->agent.aid);
 			ptr_env->set_TaskEnv(a->agent.aid, a);
@@ -494,7 +476,8 @@ namespace MAES
 	{
 		void AMS_task(void *pvParameters)
 		{
-			AMSparameter *amsParameters = &parameters;
+
+			AMSparameter *amsParameters = (AMSparameter *) pvParameters;
 			Agent_Platform *services = amsParameters->services;
 			USER_DEF_COND *cond = amsParameters->cond;
 
