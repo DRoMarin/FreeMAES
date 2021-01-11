@@ -13,8 +13,19 @@
 #include <stdio.h>
 #include <string.h>
 
+
+
 namespace MAES
 {
+	
+#ifndef tskKERNEL_VERSION_MAJOR
+#define TaskHandle_t xTaskHandle
+#define QueueHandle_t xQueueHandle
+#define TickType_t portTickType
+#define TaskFunction_t pdTASK_CODE
+#define UBaseType_t unsigned portBASE_TYPE
+#define BaseType_t portBASE_TYPE
+#endif
 
 #define Agent_AID TaskHandle_t		        // Agent ID
 #define Mailbox_Handle QueueHandle_t        // Agent's Mailbox Handle
@@ -119,7 +130,7 @@ namespace MAES
 	{
 		Agent_AID aid;
 		Mailbox_Handle mailbox_handle;
-		char* agent_name;
+		const char* agent_name;
 		UBaseType_t priority;
 		Agent_AID AP;
 		org_info* org;
@@ -148,7 +159,7 @@ namespace MAES
 	typedef struct
 	{
 		Agent_AID AMS_AID;
-		char* AP_name;
+		const char* AP_name;
 		UBaseType_t subscribers;
 	} AP_Description;
 
@@ -180,7 +191,7 @@ namespace MAES
 		friend class Agent_Platform;
 		friend class Agent_Organization;
 		friend class Agent_Msg;
-		Agent(char* name, UBaseType_t pri, uint16_t sizeStack);
+		Agent(const char* name, UBaseType_t pri, uint16_t sizeStack);
 		Agent_AID AID();
 	};
 	
@@ -216,8 +227,8 @@ namespace MAES
 		USER_DEF_COND* ptr_cond;
 
 	public:
-		Agent_Platform(char* name);
-		Agent_Platform(char* name, USER_DEF_COND* user_cond);
+		Agent_Platform(const char* name);
+		Agent_Platform(const char* name, USER_DEF_COND* user_cond);
 
 		bool boot();
 		void agent_init(Agent* agent, void behaviour(void* pvParameters));
@@ -226,7 +237,9 @@ namespace MAES
 		void agent_wait(TickType_t ticks);
 		void agent_yield();
 		Agent_AID get_running_agent();
+		#ifdef tskKERNEL_VERSION_MAJOR
 		AGENT_MODE get_state(Agent_AID aid);
+		#endif
 		Agent_info get_Agent_description(Agent_AID aid);
 		AP_Description get_AP_description();
 

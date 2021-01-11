@@ -8,7 +8,7 @@ namespace MAES
 	* Class: Agent                                                              *
 	* Function: Agent constructor                                               *
 	****************************************************************************/
-	Agent::Agent(char* name, UBaseType_t pri, uint16_t sizeStack)
+	Agent::Agent(const char* name, UBaseType_t pri, uint16_t sizeStack)
 	{
 		if (agent.priority >= (UBaseType_t)(configMAX_PRIORITIES - 1))
 			agent.priority = configMAX_PRIORITIES - 2;

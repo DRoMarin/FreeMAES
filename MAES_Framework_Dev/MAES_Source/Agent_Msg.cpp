@@ -160,7 +160,7 @@ namespace MAES
 	 ******************************************************************************/
 	MSG_TYPE Agent_Msg::receive(TickType_t timeout)
 	{
-		ptr_env = &env;
+		//ptr_env = &env;
 		//Agent* a = (Agent*)ptr_env->get_TaskEnv(caller);
 		if (xQueueReceive(get_mailbox(caller), &msg, timeout) != pdPASS)
 		{

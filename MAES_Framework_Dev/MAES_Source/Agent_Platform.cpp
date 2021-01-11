@@ -9,7 +9,7 @@ namespace MAES
 	 * Function: Agent constructor                                               
 	 * Comment: Initialize list of agent task handles to NULL.                   
 	 ******************************************************************************/
-	Agent_Platform::Agent_Platform(char *name)
+	Agent_Platform::Agent_Platform(const char *name)
 	{
 		agentAMS.agent.agent_name = name;
 		description.AP_name = name;
@@ -19,7 +19,7 @@ namespace MAES
 		agentAMS.agent.priority = configMAX_PRIORITIES - 1;
 		for (UBaseType_t i = 0; i < AGENT_LIST_SIZE; i++)
 		{
-			Agent_Handle[i] = (Agent_AID)NULL;
+			Agent_Handle[i] = (Agent_AID) NULL;
 		}
 	}
 
@@ -28,14 +28,14 @@ namespace MAES
 	 * Function: Agent constructor with User Conditions                          
 	 * Comment: Initialize list of agent task handles to NULL.                   
 	 ******************************************************************************/
-	Agent_Platform::Agent_Platform(char *name, USER_DEF_COND *user_cond)
+	Agent_Platform::Agent_Platform(const char *name, USER_DEF_COND *user_cond)
 	{
 		agentAMS.agent.agent_name = name;
 		ptr_cond = user_cond;
 		description.subscribers = 0;
 		for (UBaseType_t i = 0; i < AGENT_LIST_SIZE; i++)
 		{
-			Agent_Handle[i] = (Agent_AID)NULL;
+			Agent_Handle[i] = (Agent_AID) NULL;
 		}
 	}
 
@@ -99,7 +99,7 @@ namespace MAES
 
 	/******************************************************************************
 	 * Class: Agent Platform                                                     
-	 * Function: Agent initialion
+	 * Function: Agent initiation
 	 * Comment: Creates the task and mailbox (queue) for the agent, registers it
 	 * 			to the platform.
 	 * 			* a: Pointer of Agent to be initialized.
@@ -207,6 +207,7 @@ namespace MAES
 	 * Function: get_state
 	 * Comment: Returns the current state of agent(task).                                                      
 	 ******************************************************************************/
+	#ifdef tskKERNEL_VERSION_MAJOR
 	AGENT_MODE Agent_Platform::get_state(Agent_AID aid)
 	{
 		if (agent_search(aid))
@@ -216,19 +217,15 @@ namespace MAES
 			switch (state)
 			{
 			case eReady:
-				/* code */
 				return ACTIVE;
 
 			case eBlocked:
-				/* code */
 				return WAITING;
 
 			case eSuspended:
-				/* code */
 				return SUSPENDED;
 
 			case eDeleted:
-				/* code */
 				return TERMINATED;
 
 			default:
@@ -240,11 +237,11 @@ namespace MAES
 			return NO_MODE;
 		}
 	}
-
+	#endif
 	/******************************************************************************
 	 * Class: Agent Platform                                                     
 	 * Function: get_Agent_description
-	 * Comment: Returns the current state of agent(task).                                                                                          
+	 * Comment: Returns the description of agent(task).                                                                                          
 	 ******************************************************************************/
 	Agent_info Agent_Platform::get_Agent_description(Agent_AID aid)
 	{
@@ -484,7 +481,7 @@ namespace MAES
 			Agent_Msg msg;
 
 			UBaseType_t error_msg = 0;
-			while (1)
+			for (;;)
 			{
 				msg.receive(portMAX_DELAY);
 				if (msg.get_msg_type() == REQUEST)
