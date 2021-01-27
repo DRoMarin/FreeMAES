@@ -18,4 +18,4 @@ If your compiler shows the error `undefined _cxa_pure_virtual` include the follo
 ```
 extern "C" void __cxa_pure_virtual() { while (1); }
 ```
-This avoid undefined virtual functions.
+This avoids undefined virtual functions.
