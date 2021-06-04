@@ -361,7 +361,7 @@ namespace MAES
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
 				msg.type = REQUEST;
-				msg.content = "REGISTER";
+				msg.content = (char*) "REGISTER";
 				msg.target_agent = target_agent;
 				msg.sender_agent = xTaskGetCurrentTaskHandle();
 
@@ -406,7 +406,7 @@ namespace MAES
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
 				msg.type = REQUEST;
-				msg.content = "DEREGISTER";
+				msg.content = (char*) "DEREGISTER";
 				msg.target_agent = target_agent;
 				msg.sender_agent = xTaskGetCurrentTaskHandle();
 
@@ -451,7 +451,7 @@ namespace MAES
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
 				msg.type = REQUEST;
-				msg.content = "SUSPEND";
+				msg.content = (char*) "SUSPEND";
 				msg.target_agent = target_agent;
 				msg.sender_agent = xTaskGetCurrentTaskHandle();
 
@@ -496,7 +496,7 @@ namespace MAES
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
 				msg.type = REQUEST;
-				msg.content = "RESUME";
+				msg.content = (char*) "RESUME";
 				msg.target_agent = target_agent;
 				msg.sender_agent = xTaskGetCurrentTaskHandle();
 
@@ -541,7 +541,7 @@ namespace MAES
 			if (agent_caller->agent.org == agent_target->agent.org)
 			{
 				msg.type = REQUEST;
-				msg.content = "KILL";
+				msg.content = (char*) "KILL";
 				msg.target_agent = target_agent;
 				msg.sender_agent = xTaskGetCurrentTaskHandle();
 
@@ -576,7 +576,7 @@ namespace MAES
 		agent_caller = (Agent*)ptr_env->get_TaskEnv(caller);
 
 		msg.type = REQUEST;
-		msg.content = "RESTART";
+		msg.content = (char*) "RESTART";
 		msg.target_agent = xTaskGetCurrentTaskHandle();
 		msg.sender_agent = xTaskGetCurrentTaskHandle();
 

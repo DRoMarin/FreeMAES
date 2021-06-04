@@ -423,7 +423,7 @@ namespace MAES
 		if (caller->agent.affiliation == OWNER || caller->agent.affiliation == ADMIN)
 		{
 			msg.set_msg_type(PROPOSE);
-			msg.set_msg_content("Join Organization");
+			msg.set_msg_content((char*)"Join Organization");
 			// msg.set_msg_int(password);
 			msg.send(target_agent, timeout);
 
