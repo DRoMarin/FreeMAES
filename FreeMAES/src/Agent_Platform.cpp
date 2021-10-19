@@ -44,8 +44,9 @@ namespace MAES
 	 * Function: Agent Platform boot                                              
 	 * Comment: Create AMS task with default stack. Must be only deployed im Main. 
 	 ******************************************************************************/
-	AMSparameter parameters;
 	
+	static AMSparameter parameters;
+
 	bool Agent_Platform::boot()
 	{
 		if (xTaskGetCurrentTaskHandle() == NULL)
@@ -61,7 +62,7 @@ namespace MAES
 			parametersForTask->cond = ptr_cond;
 			agentAMS.resources.stackSize = configMINIMAL_STACK_SIZE; /*--------------------------------------------------------*/
 
-			xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)&parametersForTask, (configMAX_PRIORITIES - 1), &agentAMS.agent.aid);
+			xTaskCreate(AMS_task, agentAMS.agent.agent_name, agentAMS.resources.stackSize, (void *)parametersForTask, (configMAX_PRIORITIES - 1), &agentAMS.agent.aid);
 
 			sysVars *ptr_env = &env;
 			description.AMS_AID = agentAMS.agent.aid;
